@@ -27,21 +27,29 @@ def mandelbrot0(x, y, nmax=1000):
         return -1
     return n
 
-Nx, Ny = 100, 100
-L = np.zeros( (Nx, Ny))
-mi, mj = L.shape
-Lx = np.linspace(-2, 1, Nx)
-Ly = np.linspace(-1.3, 1.3, Ny)
+x1, x2 = 0.02, 0.14
+y1, y2 = -0.84, 0.84
 
-t = time.time()
-for x in range(0, mi):
-    for y in range(0, mj):     
-        #print(i, Lx[i], j, Ly[i])
+x1, x2 = -2, 1
+y1, y2 = -1.3, 1.3
+Nx, Ny = 300, 300
 
-        L[y,x ] = mandelbrot0(Lx[x], Ly[y], 100)
-        #print(Lx[x], Ly[y], L[x,y])
+def go0(x1, x2, y1, y2, Nx, Ny, niter):
+    L = np.zeros( (Nx, Ny))
+    mi, mj = L.shape
+    Lx = np.linspace(x1, x2, Nx)
+    Ly = np.linspace(y1, y2, Ny)
 
-print(time.time() - t)
-plt.matshow(L, extent=[-2,1,-1.3, 1.3])
-plt.show()
+    t = time.time()
+    for x in range(0, mi):
+        for y in range(0, mj):     
+            #print(i, Lx[i], j, Ly[i])
 
+            L[y,x ] = mandelbrot0(Lx[x], Ly[y], niter)
+            #print(Lx[x], Ly[y], L[x,y])
+
+    print(time.time() - t)
+    plt.matshow(L, extent=[x1, x2, y1, y2])
+    plt.show()
+
+go0(x1, x2, y1, y2, Nx, Ny, 100)
