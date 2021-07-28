@@ -1,8 +1,8 @@
 import matplotlib.pyplot as plt
 import numpy as np
 import time
-from numba import jit, njit
-
+from numba import jit, njit, prange
+import imageio
 def mandelbrot1(x, y, nmax=100):
     n, za, zb = 0, 0, 0
     modulec = 0
@@ -17,6 +17,7 @@ def mandelbrot1(x, y, nmax=100):
         modulec = zca**2 + zcb**2
 
     return n
+@njit
 def mandelbrot0(x, y, nmax=50):
     n, z = 0, 0 + 0j
     c = complex(x, y)
@@ -25,7 +26,7 @@ def mandelbrot0(x, y, nmax=50):
         z_nouveau = z**2 + c
         z = z_nouveau
     if n == nmax: 
-        return -1
+        return 0
     return n
 #@profile
 def mandelbrot2(x, y, nmax=50):
@@ -87,25 +88,21 @@ y1, y2 = -0.84, 0.84
 
 x1, x2 = -2, 1
 y1, y2 = -1.3, 1.3
-Nx, Ny = 1000, 1000
-
+Nx, Ny = 30000, 30000
+@njit(parallel=True)
 def go(fonction, x1, x2, y1, y2, Nx, Ny, niter):
     L = np.zeros( (Nx, Ny))
     mi, mj = L.shape
     Lx = np.linspace(x1, x2, Nx)
     Ly = np.linspace(y1, y2, Ny)
 
-    t = time.time()
-    for x in range(0, mi):
-        for y in range(0, mj):     
+    for x in prange(0, mi):
+        for y in prange(0, mj):     
             #print(i, Lx[i], j, Ly[i])
 
             L[y,x ] = fonction(Lx[x], Ly[y], niter)
             #print(Lx[x], Ly[y], L[x,y])
 
-    print(time.time() - t)
-    plt.matshow(L, extent=[x1, x2, y1, y2])
-    #plt.show()
     return L
 
 def t():
@@ -114,6 +111,7 @@ def t2():
     go(mandelbrot2, x1, x2, y1, y2, Nx, Ny, 100)
 
 #t()
+
 def goM(x1, x2, y1, y2, Nx, Ny, niter):
     L = np.zeros( (Nx, Ny))
     mi, mj = L.shape
@@ -136,15 +134,17 @@ def goMN(x1, x2, y1, y2, Nx, Ny, niter):
     A, B = np.meshgrid(Lx, Ly)
     C = A + 1j*B
 
-    t = time.time()
     N = mandelbrot_matrice_numba(Lx, Ly,C,  niter)
 
-    print(time.time() - t)
-    plt.matshow(N, extent=[x1, x2, y1, y2])
-    plt.show()
     return N
+t1 = time.time()
+A1 = go(mandelbrot0, x1, x2, y1, y2, Nx, Ny, 100)
+print( time.time() - t1)
+#imageio.imwrite("mdb.png", A1)
+plt.imsave('mdb2.png', A1)
+plt.matshow(A1, extent=[x1, x2, y1, y2])
+plt.show()
 
-#A1 = go(mandelbrot0, x1, x2, y1, y2, Nx, Ny, 100)
-A2 = goM(x1, x2, y1, y2, Nx, Ny, 100)
+#A2 = goM(x1, x2, y1, y2, Nx, Ny, 100)
 
 #print(np.array_equal(A1, A2))
