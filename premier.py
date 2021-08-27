@@ -1,7 +1,8 @@
+#%%
 import matplotlib.pyplot as plt
 import numpy as np
 import time
-from numba import jit, njit, prange
+from numba import jit, njit, prange, vectorize
 import imageio
 def mandelbrot1(x, y, nmax=100):
     n, za, zb = 0, 0, 0
@@ -27,7 +28,7 @@ def mandelbrot0(x, y, nmax=50):
         z = z_nouveau
     if n == nmax: 
         return 0
-    return n
+    return int(n)
 #@profile
 def mandelbrot2(x, y, nmax=50):
     an, bn = 0., 0.
@@ -88,7 +89,7 @@ y1, y2 = -0.84, 0.84
 
 x1, x2 = -2, 1
 y1, y2 = -1.3, 1.3
-Nx, Ny = 30000, 30000
+Nx, Ny = 10000, 10000
 @njit(parallel=True)
 def go(fonction, x1, x2, y1, y2, Nx, Ny, niter):
     L = np.zeros( (Nx, Ny))
@@ -137,14 +138,58 @@ def goMN(x1, x2, y1, y2, Nx, Ny, niter):
     N = mandelbrot_matrice_numba(Lx, Ly,C,  niter)
 
     return N
-t1 = time.time()
-A1 = go(mandelbrot0, x1, x2, y1, y2, Nx, Ny, 100)
-print( time.time() - t1)
+#t1 = time.time()
+#A1 = go(mandelbrot0, x1, x2, y1, y2, Nx, Ny, 100)
+#print( time.time() - t1)
 #imageio.imwrite("mdb.png", A1)
-plt.imsave('mdb2.png', A1)
-plt.matshow(A1, extent=[x1, x2, y1, y2])
-plt.show()
+#plt.imsave('mdb2.png', A1)
+#plt.matshow(A1, extent=[x1, x2, y1, y2])
+#plt.show()
 
 #A2 = goM(x1, x2, y1, y2, Nx, Ny, 100)
 
 #print(np.array_equal(A1, A2))
+
+def go2(x1, x2, y1, y2, Nx, Ny, niter):
+    L = np.zeros( (Nx, Ny))
+    Lx = np.linspace(x1, x2, Nx)
+    Ly = np.linspace(y1, y2, Ny)
+    A, B = np.meshgrid(Lx, Ly)
+    C = A + 1j*B
+
+    N = mb2(C)
+
+    return N
+
+@vectorize(["int32(complex128)"], nopython=True, target="parallel")
+def mb2(z):
+    c = z
+    n, nmax = 1, 250
+    while (abs(z) <= 2.) and (n < nmax):
+        n += 1
+        z = z**2 + c
+    if n == nmax: 
+        return 0
+    return n
+
+
+
+
+#%%
+t1 = time.time()
+A3 = go2(x1, x2, y1, y2, Nx, Ny, 100)
+print( time.time() - t1)
+plt.matshow(A3, extent=[x1, x2, y1, y2], cmap="turbo")
+plt.show()
+#%%
+t1 = time.time()
+A1 = go(mandelbrot0, x1, x2, y1, y2, Nx, Ny, 250)
+print( time.time() - t1)
+#imageio.imwrite("mdb.png", A1)
+#plt.imsave('mdb2.png', A1)
+plt.matshow(A1, extent=[x1, x2, y1, y2], cmap="turbo")
+plt.show()
+
+#A2 = goM(x1, x2, y1, y2, Nx, Ny, 100)
+
+# %%
